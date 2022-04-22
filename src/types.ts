@@ -160,7 +160,12 @@ export type RowProps = React.PropsWithChildren<{
 export type RowComponent = React.ComponentType<RowProps>;
 
 /** Type of the Spreadsheet HeaderRow component props */
-export type HeaderRowProps = React.PropsWithChildren<{}>;
+export type HeaderRowProps = React.PropsWithChildren<{
+  /** width in px */
+  width: number;
+  /** height in px */
+  height: number;
+}>;
 
 /** Type of the HeaderRow component */
 export type HeaderRowComponent = React.ComponentType<HeaderRowProps>;

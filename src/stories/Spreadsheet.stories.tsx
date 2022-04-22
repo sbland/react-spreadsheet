@@ -11,7 +11,7 @@ import { CustomCornerIndicator } from "./CustomCornerIndicator";
 type StringCell = CellBase<string | undefined>;
 type NumberCell = CellBase<number | undefined>;
 
-const INITIAL_ROWS = 100;
+const INITIAL_ROWS = 1000;
 const INITIAL_COLUMNS = 4;
 const EMPTY_DATA = createEmptyMatrix<StringCell>(INITIAL_ROWS, INITIAL_COLUMNS);
 
@@ -23,12 +23,26 @@ export default {
   },
 } as Meta<Props<StringCell>>;
 
+interface StoryWrapProps {
+  children: React.ReactNode;
+}
+
+const StoryWrap: React.FC<StoryWrapProps> = ({ children }) => (
+  <div style={{ width: 400, height: 300, outline: "1px solid red" }}>
+    {children as React.ReactNode}
+  </div>
+);
+
 export const Basic: Story<Props<StringCell>> = (props) => (
-  <Spreadsheet {...props} />
+  <StoryWrap>
+    <Spreadsheet {...props} />
+  </StoryWrap>
 );
 
 export const DarkMode: Story<Props<StringCell>> = (props) => (
-  <Spreadsheet {...props} darkMode />
+  <StoryWrap>
+    <Spreadsheet {...props} darkMode />
+  </StoryWrap>
 );
 
 export const Controlled: Story<Props<StringCell>> = (props) => {
@@ -77,30 +91,45 @@ export const Controlled: Story<Props<StringCell>> = (props) => {
         <button onClick={removeColumn}>Remove column</button>
         <button onClick={removeRow}>Remove row</button>
       </div>
-      <Spreadsheet {...props} data={data} onChange={setData} />
+      <StoryWrap>
+        <Spreadsheet {...props} data={data} onChange={setData} />
+      </StoryWrap>
     </>
   );
 };
 
 export const CustomRowLabels: Story<Props<StringCell>> = (props) => (
-  <Spreadsheet
-    {...props}
-    rowLabels={["Dan", "Alice", "Bob", "Steve", "Adam", "Ruth"]}
-  />
+  <StoryWrap>
+    <Spreadsheet
+      {...props}
+      rowLabels={["Dan", "Alice", "Bob", "Steve", "Adam", "Ruth"]}
+    />
+  </StoryWrap>
 );
 
 export const CustomColumnLabels: Story<Props<StringCell>> = (props) => (
-  <Spreadsheet {...props} columnLabels={["Name", "Age", "Email", "Address"]} />
+  <StoryWrap>
+    <Spreadsheet
+      {...props}
+      columnLabels={["Name", "Age", "Email", "Address"]}
+    />
+  </StoryWrap>
 );
 
 export const HideIndicators: Story<Props<StringCell>> = (props) => (
-  <Spreadsheet {...props} hideColumnIndicators hideRowIndicators />
+  <StoryWrap>
+    <Spreadsheet {...props} hideColumnIndicators hideRowIndicators />
+  </StoryWrap>
 );
 
 export const Readonly: Story<Props<StringCell>> = (props) => {
   const data = createEmptyMatrix<StringCell>(INITIAL_ROWS, INITIAL_COLUMNS);
   data[0][0] = { readOnly: true, value: "Read Only" };
-  return <Spreadsheet {...props} data={data} />;
+  return (
+    <StoryWrap>
+      <Spreadsheet {...props} data={data} />;
+    </StoryWrap>
+  );
 };
 
 export const WithAsyncCellData: Story<Props<StringCell>> = (props) => {
@@ -111,11 +140,17 @@ export const WithAsyncCellData: Story<Props<StringCell>> = (props) => {
     DataViewer: AsyncCellDataViewer,
     DataEditor: AsyncCellDataEditor,
   };
-  return <Spreadsheet {...props} data={data} />;
+  return (
+    <StoryWrap>
+      <Spreadsheet {...props} data={data} />;
+    </StoryWrap>
+  );
 };
 
 export const WithCustomCell: Story<Props<CellBase>> = (props) => (
-  <Spreadsheet {...props} Cell={CustomCell} />
+  <StoryWrap>
+    <Spreadsheet {...props} Cell={CustomCell} />
+  </StoryWrap>
 );
 
 export const RangeCell: Story<Props<NumberCell>> = (props) => {
@@ -125,7 +160,11 @@ export const RangeCell: Story<Props<NumberCell>> = (props) => {
     DataViewer: RangeView,
     DataEditor: RangeEdit,
   };
-  return <Spreadsheet {...props} data={data} />;
+  return (
+    <StoryWrap>
+      <Spreadsheet {...props} data={data} />
+    </StoryWrap>
+  );
 };
 
 export const WithSelectCell: Story<Props<StringCell>> = (props) => {
@@ -137,12 +176,17 @@ export const WithSelectCell: Story<Props<StringCell>> = (props) => {
     DataEditor: SelectEdit,
     className: "select-cell",
   };
-
-  return <Spreadsheet data={data} />;
+  return (
+    <StoryWrap>
+      <Spreadsheet {...props} data={data} />
+    </StoryWrap>
+  );
 };
 
 export const WithCornerIndicator: Story<Props<StringCell>> = (props) => (
-  <Spreadsheet {...props} CornerIndicator={CustomCornerIndicator} />
+  <StoryWrap>
+    <Spreadsheet {...props} CornerIndicator={CustomCornerIndicator} />
+  </StoryWrap>
 );
 
 export const Filter: Story<Props<StringCell>> = (props) => {
@@ -200,7 +244,9 @@ export const Filter: Story<Props<StringCell>> = (props) => {
           onChange={handleFilterChange}
         />
       </div>
-      <Spreadsheet {...props} data={filtered} onChange={setData} />
+      <StoryWrap>
+        <Spreadsheet {...props} data={filtered} onChange={setData} />
+      </StoryWrap>
     </>
   );
 };

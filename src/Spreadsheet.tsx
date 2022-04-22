@@ -7,6 +7,9 @@ import * as Matrix from "./matrix";
 import * as Point from "./point";
 import { Parser as FormulaParser } from "hot-formula-parser";
 import { ColumnWidthManager } from "@react_db_client/components.column-manager";
+import { FixedSizeList } from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { useScrollSyncWrap } from "react-scroll-sync-hook";
 
 import DefaultTable from "./Table";
 import DefaultRow from "./Row";
@@ -122,7 +125,8 @@ export type Props<CellType extends Types.CellBase> = {
 };
 
 const DEFAULT_COLUMN_WIDTH = 100;
-
+const HEADER_HEIGHT = 40;
+const ROW_HEIGHT = 40;
 /**
  * The Spreadsheet component
  */
@@ -174,7 +178,27 @@ const Spreadsheet = <CellType extends Types.CellBase>(
     // TODO: Get initial columns widths from props
     range(size.columns + columnCountOffset).map((i) => DEFAULT_COLUMN_WIDTH)
   );
+  const resizedTableWidth = React.useMemo(
+    () => columnWidths.reduce((acc, v) => acc + v, 0) + 90,
+    [columnWidths]
+  );
+
+  /* Setup Scroll Sync */
+  const headerRef = React.useRef(null);
+  const innerBodyRef = React.useRef(null);
   const columnManagerRef = React.useRef(null);
+
+  const nodeRefs = React.useMemo(
+    () => [headerRef, innerBodyRef, columnManagerRef],
+    [headerRef, innerBodyRef, columnManagerRef]
+  );
+
+  useScrollSyncWrap({
+    nodeRefs,
+    options: {
+      proportional: false,
+    },
+  });
 
   const mode = state.mode;
 
@@ -433,65 +457,118 @@ const Spreadsheet = <CellType extends Types.CellBase>(
     });
   }, [formulaParser, state, handleCut, handleCopy, handlePaste]);
 
+  const RenderRow = React.useCallback(
+    ({ index, style, isScrolling }) => (
+      <div
+        // {...row.getRowProps({
+        //   style: {
+        //     ...style,
+        //     width: tableWidth,
+        //   },
+        // })}
+        className="tr table_body_row"
+        style={{
+          ...style,
+          width: resizedTableWidth,
+          display: "flex",
+        }}
+      >
+        <Row key={index} row={index}>
+          {!hideRowIndicators &&
+            (rowLabels ? (
+              <RowIndicator
+                key={index}
+                row={index}
+                width={columnWidths[0]}
+                label={index in rowLabels ? rowLabels[index] : null}
+              />
+            ) : (
+              <RowIndicator key={index} row={index} width={columnWidths[0]} />
+            ))}
+          {range(size.columns).map((columnNumber) => (
+            <Cell
+              key={columnNumber}
+              row={index}
+              column={columnNumber}
+              // @ts-ignore
+              DataViewer={DataViewer}
+              formulaParser={formulaParser}
+              width={columnWidths[columnNumber + columnCountOffset]}
+            />
+          ))}
+        </Row>
+      </div>
+    ),
+    [
+      size.columns,
+      Row,
+      hideRowIndicators,
+      rowLabels,
+      RowIndicator,
+      Cell,
+      DataViewer,
+      formulaParser,
+      columnWidths,
+      columnCountOffset,
+      resizedTableWidth,
+    ]
+  );
+
   const tableNode = React.useMemo(
     () => (
       <Table columns={size.columns} hideColumnIndicators={hideColumnIndicators}>
-        <HeaderRow>
-          {!hideRowIndicators && !hideColumnIndicators && (
-            <CornerIndicator width={columnWidths[0]} />
-          )}
-          {!hideColumnIndicators &&
-            range(size.columns).map((columnNumber) =>
-              columnLabels ? (
-                <ColumnIndicator
-                  key={columnNumber}
-                  column={columnNumber}
-                  width={columnWidths[columnNumber + columnCountOffset]}
-                  label={
-                    columnNumber in columnLabels
-                      ? columnLabels[columnNumber]
-                      : null
-                  }
-                />
-              ) : (
-                <ColumnIndicator
-                  key={columnNumber}
-                  column={columnNumber}
-                  width={columnWidths[columnNumber + columnCountOffset]}
-                />
-              )
+        <div ref={headerRef} className="Spreadsheet_header-wrap">
+          <HeaderRow width={resizedTableWidth + 100} height={HEADER_HEIGHT}>
+            {!hideRowIndicators && !hideColumnIndicators && (
+              <CornerIndicator width={columnWidths[0]} />
             )}
-        </HeaderRow>
-        {range(size.rows).map((rowNumber) => (
-          <Row key={rowNumber} row={rowNumber}>
-            {!hideRowIndicators &&
-              (rowLabels ? (
-                <RowIndicator
-                  key={rowNumber}
-                  row={rowNumber}
-                  width={columnWidths[0]}
-                  label={rowNumber in rowLabels ? rowLabels[rowNumber] : null}
-                />
-              ) : (
-                <RowIndicator
-                  key={rowNumber}
-                  row={rowNumber}
-                  width={columnWidths[0]}
-                />
-              ))}
-            {range(size.columns).map((columnNumber) => (
-              <Cell
-                key={columnNumber}
-                row={rowNumber}
-                column={columnNumber}
-                // @ts-ignore
-                DataViewer={DataViewer}
-                formulaParser={formulaParser}
-                width={columnWidths[columnNumber + columnCountOffset]}
-              />
-            ))}
-          </Row>
-        ))}
+            {!hideColumnIndicators &&
+              range(size.columns).map((columnNumber) =>
+                columnLabels ? (
+                  <ColumnIndicator
+                    key={columnNumber}
+                    column={columnNumber}
+                    width={columnWidths[columnNumber + columnCountOffset]}
+                    label={
+                      columnNumber in columnLabels
+                        ? columnLabels[columnNumber]
+                        : null
+                    }
+                  />
+                ) : (
+                  <ColumnIndicator
+                    key={columnNumber}
+                    column={columnNumber}
+                    width={columnWidths[columnNumber + columnCountOffset]}
+                  />
+                )
+              )}
+          </HeaderRow>
+        </div>
+        <AutoSizer>
+          {({ height, width }) => (
+            <div
+              // {...getTableBodyProps()}
+              className="table_body"
+              style={{
+                width: width,
+                height: height - HEADER_HEIGHT,
+              }}
+            >
+              <FixedSizeList
+                height={height - HEADER_HEIGHT}
+                itemCount={size.rows}
+                itemSize={ROW_HEIGHT}
+                width="100%"
+                outerRef={innerBodyRef}
+                useIsScrolling
+              >
+                {RenderRow}
+              </FixedSizeList>
+            </div>
+          )}
+        </AutoSizer>
+
         <ColumnWidthManager
           setColumnWidths={setColumnWidths}
           columnWidths={columnWidths}
@@ -509,19 +586,15 @@ const Spreadsheet = <CellType extends Types.CellBase>(
       size.rows,
       size.columns,
       hideColumnIndicators,
-      Row,
       HeaderRow,
       hideRowIndicators,
       CornerIndicator,
       columnLabels,
       ColumnIndicator,
-      rowLabels,
-      RowIndicator,
-      Cell,
-      DataViewer,
-      formulaParser,
       columnWidths,
       columnCountOffset,
+      RenderRow,
+      resizedTableWidth,
     ]
   );
 
