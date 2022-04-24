@@ -57,6 +57,7 @@ export type StoreState<Cell extends CellBase = CellBase> = {
     number,
     Pick<Dimensions, "width" | "left"> | undefined
   >;
+  visibleDimensions: [Point, Point];
   dragging: boolean;
   lastChanged: Point | null;
   bindings: PointMap<PointSet>;
@@ -104,6 +105,10 @@ export type CellComponentProps<Cell extends CellBase = CellBase> = {
   activate: (point: Point) => void;
   /** Set the dimensions of the cell at the given point with the given dimensions */
   setCellDimensions: (point: Point, dimensions: Dimensions) => void;
+  /** The ref of the container that cell is positioned in */
+  containerRef: React.RefObject<HTMLElement>;
+  /** True if currently scrolling */
+  isScrolling: boolean;
 };
 
 /** Type of the Spreadsheet Cell component */
@@ -145,6 +150,8 @@ export type TableProps = React.PropsWithChildren<{
   columns: number;
   /** Whether column indicators are hidden */
   hideColumnIndicators?: boolean | null;
+  /** Table react ref */
+  innerRef: React.RefObject<HTMLElement>;
 }>;
 
 /** Type of the Spreadsheet Table component */

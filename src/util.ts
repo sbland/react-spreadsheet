@@ -59,6 +59,23 @@ export function getOffsetRect(element: HTMLElement): Types.Dimensions {
   };
 }
 
+/** Get the position relative to another element */
+export function getRelativeRect(
+  element: HTMLElement,
+  parentElement: HTMLElement | null
+): Types.Dimensions {
+  const elementPos = element.getBoundingClientRect();
+  const parentElementPos = parentElement?.getBoundingClientRect();
+  const left = parentElementPos ? elementPos.left - parentElementPos.left : 0;
+  const top = parentElementPos ? elementPos.top - parentElementPos.top : 0;
+  return {
+    width: element.offsetWidth,
+    height: element.offsetHeight,
+    left,
+    top,
+  };
+}
+
 /** Write given data to clipboard with given event */
 export function writeTextToClipboard(
   event: ClipboardEvent,
@@ -89,6 +106,7 @@ export function getCellDimensions(
   const cellRowDimensions = rowDimensions && rowDimensions[point.row];
   const cellColumnDimensions =
     columnDimensions && columnDimensions[point.column];
+
   return (
     cellRowDimensions &&
     cellColumnDimensions && {
@@ -109,11 +127,18 @@ export function getRangeDimensions(
     rowDimensions,
     columnDimensions
   );
-  const endDimensions = getCellDimensions(
+  let endDimensions = getCellDimensions(
     range.end,
     rowDimensions,
     columnDimensions
   );
+  if (!rowDimensions[range.end.row]) {
+    // TODO: Get column dimensions correctly!
+    endDimensions = {
+      ...startDimensions,
+      height: 9999,
+    } as Types.Dimensions;
+  }
   return (
     startDimensions &&
     endDimensions && {

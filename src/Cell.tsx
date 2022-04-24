@@ -7,7 +7,7 @@ import * as Types from "./types";
 import * as Point from "./point";
 import * as Actions from "./actions";
 import * as Selection from "./selection";
-import { isActive, getOffsetRect } from "./util";
+import { isActive, getRelativeRect } from "./util";
 import useDispatch from "./use-dispatch";
 import useSelector from "./use-selector";
 
@@ -24,7 +24,9 @@ export const Cell: React.FC<Types.CellComponentProps> = ({
   select,
   activate,
   setCellDimensions,
+  containerRef,
   width,
+  isScrolling,
 }): React.ReactElement => {
   const rootRef = React.useRef<HTMLTableCellElement | null>(null);
   const point = React.useMemo(
@@ -38,8 +40,10 @@ export const Cell: React.FC<Types.CellComponentProps> = ({
   const handleMouseDown = React.useCallback(
     (event: React.MouseEvent<HTMLTableCellElement>) => {
       if (mode === "view") {
-        setCellDimensions(point, getOffsetRect(event.currentTarget));
-
+        setCellDimensions(
+          point,
+          getRelativeRect(event.currentTarget, containerRef.current)
+        );
         if (event.shiftKey) {
           select(point);
         } else {
@@ -47,28 +51,39 @@ export const Cell: React.FC<Types.CellComponentProps> = ({
         }
       }
     },
-    [mode, setCellDimensions, point, select, activate]
+    [mode, setCellDimensions, point, select, activate, containerRef]
   );
 
   const handleMouseOver = React.useCallback(
     (event: React.MouseEvent<HTMLTableCellElement>) => {
       if (dragging) {
-        setCellDimensions(point, getOffsetRect(event.currentTarget));
+        setCellDimensions(
+          point,
+          getRelativeRect(event.currentTarget, containerRef.current)
+        );
         select(point);
       }
     },
-    [setCellDimensions, select, dragging, point]
+    [setCellDimensions, select, dragging, point, containerRef]
   );
 
   React.useEffect(() => {
     const root = rootRef.current;
-    if (selected && root) {
-      setCellDimensions(point, getOffsetRect(root));
+    if (selected && root && !isScrolling) {
+      setCellDimensions(point, getRelativeRect(root, containerRef.current));
     }
     if (root && active && mode === "view") {
       root.focus();
     }
-  }, [setCellDimensions, selected, active, mode, point, data]);
+  }, [
+    setCellDimensions,
+    selected,
+    active,
+    mode,
+    point,
+    containerRef,
+    isScrolling,
+  ]);
 
   if (data && data.DataViewer) {
     // @ts-ignore

@@ -9,11 +9,17 @@ import { isActive } from "./util";
 import { createReducer } from "@reduxjs/toolkit";
 import * as Actions from "./actions";
 
+const initialVisibleDimensions = [
+  { row: 0, column: 0 } as Point.Point,
+  { row: 0, column: 0 } as Point.Point,
+] as [Point.Point, Point.Point];
+
 export const INITIAL_STATE: Types.StoreState = {
   active: null,
   mode: "view",
   rowDimensions: {},
   columnDimensions: {},
+  visibleDimensions: initialVisibleDimensions,
   lastChanged: null,
   hasPasted: false,
   cut: false,
@@ -65,7 +71,6 @@ const reducer = createReducer(INITIAL_STATE, (builder) => {
   builder.addCase(Actions.selectEntireColumn, (state, action) => {
     const { column, extend } = action.payload;
     const { active } = state;
-
     return {
       ...state,
       selected:
@@ -79,7 +84,6 @@ const reducer = createReducer(INITIAL_STATE, (builder) => {
   builder.addCase(Actions.selectEntireRow, (state, action) => {
     const { row, extend } = action.payload;
     const { active } = state;
-
     return {
       ...state,
       selected:
@@ -117,6 +121,7 @@ const reducer = createReducer(INITIAL_STATE, (builder) => {
     const { point, dimensions } = action.payload;
     const prevRowDimensions = state.rowDimensions[point.row];
     const prevColumnDimensions = state.columnDimensions[point.column];
+    // TODO: When using react window some rows may be hidden
     if (
       prevRowDimensions &&
       prevColumnDimensions &&

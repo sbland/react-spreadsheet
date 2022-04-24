@@ -184,6 +184,7 @@ const Spreadsheet = <CellType extends Types.CellBase>(
   );
 
   /* Setup Scroll Sync */
+  const tableRef = React.useRef(null);
   const headerRef = React.useRef(null);
   const innerBodyRef = React.useRef(null);
   const columnManagerRef = React.useRef(null);
@@ -460,12 +461,6 @@ const Spreadsheet = <CellType extends Types.CellBase>(
   const RenderRow = React.useCallback(
     ({ index, style, isScrolling }) => (
       <div
-        // {...row.getRowProps({
-        //   style: {
-        //     ...style,
-        //     width: tableWidth,
-        //   },
-        // })}
         className="tr table_body_row"
         style={{
           ...style,
@@ -494,6 +489,8 @@ const Spreadsheet = <CellType extends Types.CellBase>(
               DataViewer={DataViewer}
               formulaParser={formulaParser}
               width={columnWidths[columnNumber + columnCountOffset]}
+              containerRef={tableRef}
+              isScrolling={isScrolling}
             />
           ))}
         </Row>
@@ -511,12 +508,17 @@ const Spreadsheet = <CellType extends Types.CellBase>(
       columnWidths,
       columnCountOffset,
       resizedTableWidth,
+      tableRef,
     ]
   );
 
   const tableNode = React.useMemo(
     () => (
-      <Table columns={size.columns} hideColumnIndicators={hideColumnIndicators}>
+      <Table
+        columns={size.columns}
+        hideColumnIndicators={hideColumnIndicators}
+        innerRef={tableRef}
+      >
         <div ref={headerRef} className="Spreadsheet_header-wrap">
           <HeaderRow width={resizedTableWidth + 100} height={HEADER_HEIGHT}>
             {!hideRowIndicators && !hideColumnIndicators && (
