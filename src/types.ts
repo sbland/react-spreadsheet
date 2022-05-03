@@ -5,6 +5,7 @@ import { PointMap } from "./point-map";
 import { PointSet } from "./point-set";
 import { Matrix } from "./matrix";
 import { Selection } from "./selection";
+import { PointRange } from "./point-range";
 
 /** The base type of cell data in Spreadsheet */
 export type CellBase<Value = any> = {
@@ -57,11 +58,12 @@ export type StoreState<Cell extends CellBase = CellBase> = {
     number,
     Pick<Dimensions, "width" | "left"> | undefined
   >;
-  visibleDimensions: [Point, Point];
+  visibleBoundary: PointRange;
   dragging: boolean;
   lastChanged: Point | null;
   bindings: PointMap<PointSet>;
   lastCommit: null | CellChange<Cell>[];
+  isScrolling: boolean;
 };
 
 /** Function for getting the cells the cell's value is bound to */

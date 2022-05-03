@@ -10,6 +10,13 @@ import * as Types from "./types";
 import * as Point from "./point";
 import { createEmptyMatrix } from "./util";
 
+jest.mock(
+  "react-virtualized-auto-sizer",
+  () =>
+    ({ children }: any) =>
+      children({ height: 600, width: 600 })
+);
+
 type Value = string;
 type CellType = Types.CellBase<Value>;
 
@@ -36,9 +43,22 @@ beforeAll(() => {
   jest.clearAllMocks();
 });
 
+interface WrapProps {
+  children: React.ReactNode;
+}
+const Wrap: React.FC<WrapProps> = ({ children }) => (
+  <div style={{ width: 400, height: 300, outline: "1px solid red" }}>
+    {children as React.ReactNode}
+  </div>
+);
+
+/** React window implementation requires a sized container */
+const renderWithWrap = (contents: React.ReactNode) =>
+  render(<Wrap>{contents}</Wrap>);
+
 describe("<Spreadsheet />", () => {
   test("renders", () => {
-    render(<Spreadsheet {...EXAMPLE_PROPS} />);
+    renderWithWrap(<Spreadsheet {...EXAMPLE_PROPS} />);
     // Get elements
     const element = getSpreadsheetElement();
     const table = safeQuerySelector(element, "[role=table].Spreadsheet__table");
@@ -71,7 +91,7 @@ describe("<Spreadsheet />", () => {
   test("click activates cell", () => {
     const onActivate = jest.fn();
     const onSelect = jest.fn();
-    render(
+    renderWithWrap(
       <Spreadsheet
         {...EXAMPLE_PROPS}
         onActivate={onActivate}
@@ -104,7 +124,9 @@ describe("<Spreadsheet />", () => {
   });
   test("pressing Enter when a cell is active enters to edit mode", () => {
     const onModeChange = jest.fn();
-    render(<Spreadsheet {...EXAMPLE_PROPS} onModeChange={onModeChange} />);
+    renderWithWrap(
+      <Spreadsheet {...EXAMPLE_PROPS} onModeChange={onModeChange} />
+    );
     // Get elements
     const element = getSpreadsheetElement();
     const cell = safeQuerySelector(element, "[role=cell]");
@@ -126,7 +148,7 @@ describe("<Spreadsheet />", () => {
     expect(onModeChange).toHaveBeenCalledWith("edit");
   });
   test("input triggers onChange", () => {
-    render(<Spreadsheet {...EXAMPLE_PROPS} />);
+    renderWithWrap(<Spreadsheet {...EXAMPLE_PROPS} />);
     // Get elements
     const element = getSpreadsheetElement();
     const cell = safeQuerySelector(element, "[role=cell]");
@@ -151,8 +173,12 @@ describe("<Spreadsheet />", () => {
     expect(EXAMPLE_PROPS.onChange).toBeCalledWith(EXAMPLE_MODIFIED_DATA);
   });
   test("handles external change of data correctly", () => {
-    const { rerender } = render(<Spreadsheet {...EXAMPLE_PROPS} />);
-    rerender(<Spreadsheet {...EXAMPLE_PROPS} data={EXAMPLE_MODIFIED_DATA} />);
+    const { rerender } = renderWithWrap(<Spreadsheet {...EXAMPLE_PROPS} />);
+    rerender(
+      <Wrap>
+        <Spreadsheet {...EXAMPLE_PROPS} data={EXAMPLE_MODIFIED_DATA} />
+      </Wrap>
+    );
     // Get text span
     const matchingElements = screen.getAllByText(EXAMPLE_CELL.value);
     expect(matchingElements).toHaveLength(1);
@@ -163,40 +189,47 @@ describe("<Spreadsheet />", () => {
     // Get row
     const row = cell.parentElement;
     expectNotToBeNull(row);
+    // Get row wrap
+    const rowWrap = row.parentElement;
+    expectNotToBeNull(rowWrap);
     // Make sure the cell is in the right column
+    // Should be in column 1 as column 0 is the RowIndicator
     expect(getHTMLCollectionIndexOf(row.children, cell)).toBe(1);
-    // Get table
-    const table = row.parentElement;
-    expectNotToBeNull(table);
+    // Get rowContainer
+    const rowContainer = rowWrap.parentElement;
+    expectNotToBeNull(rowContainer);
     // Make sure the cell is in the right row
-    expect(getHTMLCollectionIndexOf(table.children, row)).toBe(1);
+    // Should be in row 0 as the container only contains data rows
+    expect(getHTMLCollectionIndexOf(rowContainer.children, rowWrap)).toBe(0);
   });
   test("renders class name", () => {
     const EXAMPLE_CLASS_NAME = "EXAMPLE_CLASS_NAME";
-    render(<Spreadsheet {...EXAMPLE_PROPS} className={EXAMPLE_CLASS_NAME} />);
+    renderWithWrap(
+      <Spreadsheet {...EXAMPLE_PROPS} className={EXAMPLE_CLASS_NAME} />
+    );
     const element = getSpreadsheetElement();
     expect(element).toHaveClass(EXAMPLE_CLASS_NAME);
   });
   test("setting hideColumnIndicators hides column indicators", () => {
-    render(<Spreadsheet {...EXAMPLE_PROPS} hideColumnIndicators />);
+    renderWithWrap(<Spreadsheet {...EXAMPLE_PROPS} hideColumnIndicators />);
     const ths = document.querySelectorAll(".Spreadsheet [role=columnheader]");
     expect(ths).toHaveLength(ROWS);
   });
   test("setting hideRowIndicatos hides row indicators", () => {
-    render(<Spreadsheet {...EXAMPLE_PROPS} hideRowIndicators />);
+    renderWithWrap(<Spreadsheet {...EXAMPLE_PROPS} hideRowIndicators />);
     const ths = document.querySelectorAll(".Spreadsheet [role=columnheader]");
     expect(ths).toHaveLength(COLUMNS);
   });
   test("calls onKeyDown on key down", () => {
     const onKeyDown = jest.fn();
-    render(<Spreadsheet {...EXAMPLE_PROPS} onKeyDown={onKeyDown} />);
+    renderWithWrap(<Spreadsheet {...EXAMPLE_PROPS} onKeyDown={onKeyDown} />);
     const element = getSpreadsheetElement();
     fireEvent.keyDown(element, "Enter");
     expect(onKeyDown).toHaveBeenCalledTimes(1);
   });
   test("shift-click cell when a cell is activated selects a range of cells", async () => {
     const onSelect = jest.fn();
-    render(<Spreadsheet {...EXAMPLE_PROPS} onSelect={onSelect} />);
+    renderWithWrap(<Spreadsheet {...EXAMPLE_PROPS} onSelect={onSelect} />);
     // Get elements
     const element = getSpreadsheetElement();
 
@@ -230,7 +263,9 @@ describe("<Spreadsheet />", () => {
   });
   test("setting row labels changes row indicators labels", () => {
     const EXAMPLE_ROW_LABELS = ["A", "B", "C", "D"];
-    render(<Spreadsheet {...EXAMPLE_PROPS} rowLabels={EXAMPLE_ROW_LABELS} />);
+    renderWithWrap(
+      <Spreadsheet {...EXAMPLE_PROPS} rowLabels={EXAMPLE_ROW_LABELS} />
+    );
     const element = getSpreadsheetElement();
     // Get row label elements.
     // Do not select from first row because it only contains corner and column indicators
@@ -245,7 +280,7 @@ describe("<Spreadsheet />", () => {
   });
   test("setting column labels changes column indicators labels", () => {
     const EXAMPLE_COLUMN_LABELS = ["First", "Second", "Third", "Fourth"];
-    render(
+    renderWithWrap(
       <Spreadsheet {...EXAMPLE_PROPS} columnLabels={EXAMPLE_COLUMN_LABELS} />
     );
     const element = getSpreadsheetElement();
@@ -288,6 +323,7 @@ function safeQuerySelectorAll<T extends Element = Element>(
     const elementInner = element.querySelectorAll<T>(selector);
     try {
       const el = elementInner[index];
+      if (!el) throw Error(`Selector ${selector} has no matching elements`);
       return elementInner[index];
     } catch (e) {
       throw new Error(`Selector ${selector} has no matching elements`);

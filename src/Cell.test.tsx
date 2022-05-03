@@ -18,6 +18,23 @@ const MOCK_ACTIVATE = jest.fn();
 const MOCK_SET_CELL_DIMENSIONS = jest.fn();
 const EXAMPLE_ROW = 0;
 const EXAMPLE_COLUMN = 0;
+
+const MOCK_CONTAINER_REF = {
+  current: {
+    getBoundingClientRect: (): DOMRect => ({
+      x: 0,
+      y: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      top: 0,
+      height: 1000,
+      width: 1000,
+      toJSON: () => {},
+    }),
+  },
+} as React.RefObject<HTMLElement>;
+
 const EXAMPLE_PROPS: Types.CellComponentProps = {
   row: EXAMPLE_ROW,
   column: EXAMPLE_COLUMN,
@@ -33,6 +50,8 @@ const EXAMPLE_PROPS: Types.CellComponentProps = {
   activate: MOCK_ACTIVATE,
   setCellDimensions: MOCK_SET_CELL_DIMENSIONS,
   width: 100,
+  containerRef: MOCK_CONTAINER_REF,
+  isScrolling: false,
 };
 const EXAMPLE_DATA_VIEWER_PROPS: Types.DataViewerProps = {
   row: EXAMPLE_ROW,

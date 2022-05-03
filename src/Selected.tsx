@@ -12,6 +12,7 @@ const Selected: React.FC = () => {
       getSelectedDimensions(
         state.rowDimensions,
         state.columnDimensions,
+        state.visibleBoundary,
         state.data,
         state.selected
       )
@@ -20,12 +21,13 @@ const Selected: React.FC = () => {
   const hidden = useSelector(
     (state) => Selection.size(state.selected, state.data) < 2
   );
+  const isScrolling = useSelector((state) => state.isScrolling);
   return (
     <FloatingRect
       variant="selected"
       dimensions={dimensions}
       dragging={dragging}
-      hidden={hidden}
+      hidden={hidden || isScrolling}
     />
   );
 };

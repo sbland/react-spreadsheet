@@ -8,7 +8,12 @@ import Table from "./Table";
 
 describe("<Table />", () => {
   test("renders empty table", () => {
-    render(<Table columns={0}>{null}</Table>);
+    const ref = { current: {} } as React.RefObject<HTMLElement>;
+    render(
+      <Table innerRef={ref} columns={0}>
+        {null}
+      </Table>
+    );
     expect(
       document.querySelectorAll(
         ".Spreadsheet__table .colgroup .Spreadsheet__columnNode"
@@ -19,7 +24,12 @@ describe("<Table />", () => {
     ).toBe(1);
   });
   test("renders table with content", () => {
-    render(<Table columns={0}>{<div role="row" id="exampleRow" />}</Table>);
+    const ref = { current: {} } as React.RefObject<HTMLElement>;
+    render(
+      <Table innerRef={ref} columns={0}>
+        {<div role="row" id="exampleRow" />}
+      </Table>
+    );
     expect(
       document.querySelectorAll(
         ".Spreadsheet__table .Spreadsheet_body #exampleRow"
@@ -27,8 +37,9 @@ describe("<Table />", () => {
     ).toBe(1);
   });
   test("renders empty table with no cols if hideColumnIndicators is set", () => {
+    const ref = { current: {} } as React.RefObject<HTMLElement>;
     render(
-      <Table columns={0} hideColumnIndicators>
+      <Table innerRef={ref} columns={0} hideColumnIndicators>
         {null}
       </Table>
     );
@@ -40,7 +51,12 @@ describe("<Table />", () => {
   });
   test("renders columns according to given prop", () => {
     const columns = 1;
-    render(<Table columns={columns}>{null}</Table>);
+    const ref = { current: {} } as React.RefObject<HTMLElement>;
+    render(
+      <Table innerRef={ref} columns={columns}>
+        {null}
+      </Table>
+    );
     expect(
       document.querySelectorAll(
         ".Spreadsheet__table .colgroup .Spreadsheet__columnNode"

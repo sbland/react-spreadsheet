@@ -9,17 +9,17 @@ import { isActive } from "./util";
 import { createReducer } from "@reduxjs/toolkit";
 import * as Actions from "./actions";
 
-const initialVisibleDimensions = [
-  { row: 0, column: 0 } as Point.Point,
-  { row: 0, column: 0 } as Point.Point,
-] as [Point.Point, Point.Point];
+const initialvisibleBoundary = {
+  start: { row: 0, column: 0 } as Point.Point,
+  end: { row: 0, column: 0 } as Point.Point,
+} as PointRange.PointRange;
 
 export const INITIAL_STATE: Types.StoreState = {
   active: null,
   mode: "view",
   rowDimensions: {},
   columnDimensions: {},
-  visibleDimensions: initialVisibleDimensions,
+  visibleBoundary: initialvisibleBoundary,
   lastChanged: null,
   hasPasted: false,
   cut: false,
@@ -29,6 +29,7 @@ export const INITIAL_STATE: Types.StoreState = {
   copied: PointMap.from([]),
   bindings: PointMap.from([]),
   lastCommit: null,
+  isScrolling: false,
 };
 
 const reducer = createReducer(INITIAL_STATE, (builder) => {
@@ -244,6 +245,15 @@ const reducer = createReducer(INITIAL_STATE, (builder) => {
   builder.addCase(Actions.commit, (state, action) => {
     const { changes } = action.payload;
     return { ...state, ...commit(changes) };
+  });
+  builder.addCase(Actions.setVisibleRows, (state, action) => {
+    const visibleRows = action.payload as number[];
+    const start = { column: 0, row: visibleRows.at(0) || 0 };
+    const end = { column: 9999999, row: visibleRows.at(-1) || 0 };
+    return { ...state, visibleBoundary: { start, end } };
+  });
+  builder.addCase(Actions.setIsScrolling, (state, action) => {
+    return { ...state, isScrolling: action.payload };
   });
   builder.addMatcher(
     (action) =>

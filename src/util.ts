@@ -101,8 +101,11 @@ export function readTextFromClipboard(event: ClipboardEvent): string {
 export function getCellDimensions(
   point: Point.Point,
   rowDimensions: Types.StoreState["rowDimensions"] | undefined,
-  columnDimensions: Types.StoreState["columnDimensions"] | undefined
+  columnDimensions: Types.StoreState["columnDimensions"] | undefined,
+  visibleBoundary: PointRange.PointRange
 ): Types.Dimensions | undefined {
+  if (!pointIsVisible(point, visibleBoundary)) return undefined;
+
   const cellRowDimensions = rowDimensions && rowDimensions[point.row];
   const cellColumnDimensions =
     columnDimensions && columnDimensions[point.column];
@@ -116,29 +119,92 @@ export function getCellDimensions(
   );
 }
 
-/** Get the dimensions of a range of cells */
+/** Check if a point is within a bounding box */
+export function pointIsVisible(
+  point: Point.Point,
+  visibleBoundary: PointRange.PointRange
+): boolean {
+  const { start, end } = visibleBoundary;
+  const columnVisible =
+    start.column <= point.column && point.column <= end.column;
+  const rowVisible = start.row <= point.row && point.row <= end.row;
+  return columnVisible && rowVisible;
+}
+
+export function selectionIsVisible(
+  range: PointRange.PointRange,
+  visibleBoundary: PointRange.PointRange
+): boolean {
+  const { start, end } = visibleBoundary;
+
+  if (range.start.column < start.column && range.end.column < start.column)
+    return false;
+  if (range.start.column > end.column && range.end.column > end.column)
+    return false;
+  if (range.start.column < start.column && range.end.column < start.column)
+    return false;
+  if (range.start.column > end.column && range.end.column > end.column)
+    return false;
+  return true;
+}
+
+/** Clip a range to the visible boundary */
+export function clipCellRange(
+  range: PointRange.PointRange,
+  visibleBoundary: PointRange.PointRange
+): PointRange.PointRange {
+  return {
+    start: {
+      row:
+        range.start.row >= visibleBoundary.start.row
+          ? range.start.row
+          : visibleBoundary.start.row,
+      column:
+        range.start.column >= visibleBoundary.start.column
+          ? range.start.column
+          : visibleBoundary.start.column,
+    },
+    end: {
+      row:
+        range.end.row <= visibleBoundary.end.row
+          ? range.end.row
+          : visibleBoundary.end.row,
+      column:
+        range.end.column <= visibleBoundary.end.column
+          ? range.end.column
+          : visibleBoundary.end.column,
+    },
+  };
+}
+
+/** Get the dimensions of a range of cells
+ *
+ *
+ */
 export function getRangeDimensions(
   rowDimensions: Types.StoreState["rowDimensions"],
   columnDimensions: Types.StoreState["columnDimensions"],
+  visibleBoundary: PointRange.PointRange,
   range: PointRange.PointRange
 ): Types.Dimensions | undefined {
+  if (range.start.column > range.end.column || range.start.row > range.end.row)
+    throw Error("Start greater than end!");
+  if (!selectionIsVisible(range, visibleBoundary)) return undefined;
+
+  const clippedRange = clipCellRange(range, visibleBoundary);
+
   const startDimensions = getCellDimensions(
-    range.start,
+    clippedRange.start,
     rowDimensions,
-    columnDimensions
+    columnDimensions,
+    visibleBoundary
   );
-  let endDimensions = getCellDimensions(
-    range.end,
+  const endDimensions = getCellDimensions(
+    clippedRange.end,
     rowDimensions,
-    columnDimensions
+    columnDimensions,
+    visibleBoundary
   );
-  if (!rowDimensions[range.end.row]) {
-    // TODO: Get column dimensions correctly!
-    endDimensions = {
-      ...startDimensions,
-      height: 9999,
-    } as Types.Dimensions;
-  }
   return (
     startDimensions &&
     endDimensions && {
@@ -154,12 +220,18 @@ export function getRangeDimensions(
 export function getSelectedDimensions(
   rowDimensions: Types.StoreState["rowDimensions"],
   columnDimensions: Types.StoreState["columnDimensions"],
+  visibleBoundary: PointRange.PointRange,
   data: Matrix.Matrix<unknown>,
   selected: Selection.Selection
 ): Types.Dimensions | undefined {
   const range = Selection.toRange(selected, data);
   return range
-    ? getRangeDimensions(rowDimensions, columnDimensions, range)
+    ? getRangeDimensions(
+        rowDimensions,
+        columnDimensions,
+        visibleBoundary,
+        range
+      )
     : undefined;
 }
 

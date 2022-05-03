@@ -8,13 +8,13 @@ import HeaderRow from "./HeaderRow";
 
 describe("<HeaderRow />", () => {
   test("renders", () => {
-    render(<HeaderRow />);
+    render(<HeaderRow width={100} height={100} />);
     const row = document.querySelector("[role=row]");
     expect(row).not.toBeNull();
   });
   test("renders with children", () => {
     render(
-      <HeaderRow>
+      <HeaderRow width={100} height={100}>
         <div role="columnheader"></div>
       </HeaderRow>
     );

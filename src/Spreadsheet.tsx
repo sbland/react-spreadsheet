@@ -46,6 +46,7 @@ import {
 import reducer, { INITIAL_STATE, hasKeyDownHandler } from "./reducer";
 import context from "./context";
 import "./Spreadsheet.css";
+import { getVisibleElements } from "./scrolling";
 
 /** The Spreadsheet component props */
 export type Props<CellType extends Types.CellBase> = {
@@ -167,7 +168,6 @@ const Spreadsheet = <CellType extends Types.CellBase>(
     initialState
   );
   const [state, dispatch] = reducerElements;
-
   const size = React.useMemo(() => {
     return calculateSpreadsheetSize(state.data, rowLabels, columnLabels);
   }, [state.data, rowLabels, columnLabels]);
@@ -235,6 +235,14 @@ const Spreadsheet = <CellType extends Types.CellBase>(
     () => dispatch(Actions.dragEnd()),
     [dispatch]
   );
+  const setScrollingState = React.useCallback(
+    (value) => dispatch(Actions.setIsScrolling(value)),
+    [dispatch]
+  );
+  const setVisibleRowsState = React.useCallback(
+    (visibleRows) => dispatch(Actions.setVisibleRows(visibleRows)),
+    [dispatch]
+  );
   const setData = React.useCallback(
     (data) => dispatch(Actions.setData(data)),
     [dispatch]
@@ -297,6 +305,25 @@ const Spreadsheet = <CellType extends Types.CellBase>(
       setData(props.data);
     }
   }, [props.data, setData]);
+
+  const scrollingTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  /** Update scrolling state */
+  React.useEffect(() => {
+    /** Sets scrolling to false after timeout. Timeout cleared if scrolling. */
+    const SCROLLING_TIMEOUT = 100;
+    if (state.isScrolling && innerBodyRef.current) {
+      scrollingTimeout.current = setTimeout(() => {
+        innerBodyRef.current &&
+          setVisibleRowsState(getVisibleElements(innerBodyRef.current));
+        dispatch(Actions.setIsScrolling(false));
+      }, SCROLLING_TIMEOUT);
+    }
+    return () => {
+      scrollingTimeout.current && clearTimeout(scrollingTimeout.current);
+    };
+  }, [state, dispatch, setVisibleRowsState]);
 
   const clip = React.useCallback(
     (event: ClipboardEvent): void => {
@@ -431,6 +458,13 @@ const Spreadsheet = <CellType extends Types.CellBase>(
   }, [handleCut, handleCopy, handlePaste]);
 
   React.useEffect(() => {
+    if (innerBodyRef.current) {
+      const visibleRows = getVisibleElements(innerBodyRef.current);
+      dispatch(Actions.setVisibleRows(visibleRows));
+    }
+  }, [innerBodyRef, dispatch]);
+
+  React.useEffect(() => {
     formulaParser.on("callCellValue", (cellCoord, done) => {
       let value;
       try {
@@ -461,12 +495,13 @@ const Spreadsheet = <CellType extends Types.CellBase>(
   const RenderRow = React.useCallback(
     ({ index, style, isScrolling }) => (
       <div
-        className="tr table_body_row"
+        className="tr table_body_row Spreadsheet__body-row_wrap"
         style={{
           ...style,
           width: resizedTableWidth,
           display: "flex",
         }}
+        data-itemindex={index} /** Used to track visible row indexes */
       >
         <Row key={index} row={index}>
           {!hideRowIndicators &&
@@ -550,13 +585,15 @@ const Spreadsheet = <CellType extends Types.CellBase>(
         <AutoSizer>
           {({ height, width }) => (
             <div
-              // {...getTableBodyProps()}
               className="table_body"
               style={{
                 width: width,
                 height: height - HEADER_HEIGHT,
               }}
             >
+              <Selected />
+              <Copied />
+
               <FixedSizeList
                 height={height - HEADER_HEIGHT}
                 itemCount={size.rows}
@@ -564,6 +601,12 @@ const Spreadsheet = <CellType extends Types.CellBase>(
                 width="100%"
                 outerRef={innerBodyRef}
                 useIsScrolling
+                // TODO: Implement item key for sorting
+                onScroll={(event) => {
+                  !state.isScrolling &&
+                    innerBodyRef.current &&
+                    setScrollingState(true);
+                }}
               >
                 {RenderRow}
               </FixedSizeList>
@@ -597,6 +640,9 @@ const Spreadsheet = <CellType extends Types.CellBase>(
       columnCountOffset,
       RenderRow,
       resizedTableWidth,
+      setScrollingState,
+      innerBodyRef,
+      state,
     ]
   );
 
@@ -626,8 +672,6 @@ const Spreadsheet = <CellType extends Types.CellBase>(
       >
         {tableNode}
         {activeCellNode}
-        <Selected />
-        <Copied />
       </div>
     ),
     [

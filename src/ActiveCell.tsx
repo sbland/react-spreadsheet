@@ -39,7 +39,12 @@ const ActiveCell: React.FC<Props> = (props) => {
   );
   const dimensions = useSelector((state) =>
     active
-      ? getCellDimensions(active, state.rowDimensions, state.columnDimensions)
+      ? getCellDimensions(
+          active,
+          state.rowDimensions,
+          state.columnDimensions,
+          state.visibleBoundary
+        )
       : undefined
   );
   const hidden = React.useMemo(

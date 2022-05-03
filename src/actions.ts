@@ -87,3 +87,13 @@ export const commit = createAction<
   },
   "COMMIT"
 >("COMMIT", (changes) => ({ payload: { changes } }));
+
+export const setVisibleRows = createAction<
+  (visibleRows: number[]) => { payload: number[] },
+  "SET_VISIBLE_ROWS"
+>("SET_VISIBLE_ROWS", (visibleRows) => ({ payload: visibleRows }));
+
+export const setIsScrolling = createAction<
+  (isScrolling: boolean) => { payload: boolean },
+  "SET_IS_SCROLLING"
+>("SET_IS_SCROLLING", (isScrolling) => ({ payload: isScrolling }));

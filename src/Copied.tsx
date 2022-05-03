@@ -10,7 +10,12 @@ const Copied: React.FC = () => {
   const dimensions = useSelector(
     (state) =>
       range &&
-      getRangeDimensions(state.rowDimensions, state.columnDimensions, range)
+      getRangeDimensions(
+        state.rowDimensions,
+        state.columnDimensions,
+        state.visibleBoundary,
+        range
+      )
   );
   const hidden = range === null;
 
