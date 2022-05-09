@@ -66,7 +66,10 @@ export function getRelativeRect(
 ): Types.Dimensions {
   const elementPos = element.getBoundingClientRect();
   const parentElementPos = parentElement?.getBoundingClientRect();
-  const left = parentElementPos ? elementPos.left - parentElementPos.left : 0;
+  const parentScrollOffset = parentElement?.scrollLeft || 0;
+  const left = parentElementPos
+    ? elementPos.left - parentElementPos.left + parentScrollOffset
+    : 0;
   const top = parentElementPos ? elementPos.top - parentElementPos.top : 0;
   return {
     width: element.offsetWidth,

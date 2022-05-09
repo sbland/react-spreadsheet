@@ -188,14 +188,10 @@ const Spreadsheet = <CellType extends Types.CellBase>(
   const headerRef = React.useRef(null);
   const innerBodyRef = React.useRef(null);
   const columnManagerRef = React.useRef(null);
-
-  const nodeRefs = React.useMemo(
-    () => [headerRef, innerBodyRef, columnManagerRef],
-    [headerRef, innerBodyRef, columnManagerRef]
-  );
+  const selectedContainerRef = React.useRef(null);
 
   useScrollSyncWrap({
-    nodeRefs,
+    nodeRefs: [headerRef, innerBodyRef, columnManagerRef, selectedContainerRef],
     options: {
       proportional: false,
     },
@@ -524,7 +520,8 @@ const Spreadsheet = <CellType extends Types.CellBase>(
               DataViewer={DataViewer}
               formulaParser={formulaParser}
               width={columnWidths[columnNumber + columnCountOffset]}
-              containerRef={tableRef}
+              // containerRef={tableRef}
+              containerRef={selectedContainerRef}
               isScrolling={isScrolling}
             />
           ))}
@@ -543,8 +540,22 @@ const Spreadsheet = <CellType extends Types.CellBase>(
       columnWidths,
       columnCountOffset,
       resizedTableWidth,
-      tableRef,
+      // tableRef,
+      // innerBodyRef,
+      selectedContainerRef,
     ]
+  );
+
+  const activeCellNode = React.useMemo(
+    () => (
+      <ActiveCell
+        // @ts-ignore
+        DataEditor={DataEditor}
+        // @ts-ignore
+        getBindingsForCell={getBindingsForCell}
+      />
+    ),
+    [DataEditor, getBindingsForCell]
   );
 
   const tableNode = React.useMemo(
@@ -584,33 +595,53 @@ const Spreadsheet = <CellType extends Types.CellBase>(
         </div>
         <AutoSizer>
           {({ height, width }) => (
-            <div
-              className="table_body"
-              style={{
-                width: width,
-                height: height - HEADER_HEIGHT,
-              }}
-            >
-              <Selected />
-              <Copied />
-
-              <FixedSizeList
-                height={height - HEADER_HEIGHT}
-                itemCount={size.rows}
-                itemSize={ROW_HEIGHT}
-                width="100%"
-                outerRef={innerBodyRef}
-                useIsScrolling
-                // TODO: Implement item key for sorting
-                onScroll={(event) => {
-                  !state.isScrolling &&
-                    innerBodyRef.current &&
-                    setScrollingState(true);
+            <>
+              <div
+                className="selectedContainer_wrap"
+                ref={selectedContainerRef}
+                style={{
+                  overflow: "scroll",
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  right: 0,
+                  bottom: 0,
                 }}
               >
-                {RenderRow}
-              </FixedSizeList>
-            </div>
+                <div
+                  className="selectedContainer"
+                  style={{ width: resizedTableWidth, height: "100%" }}
+                >
+                  {activeCellNode}
+                  <Selected />
+                  <Copied />
+                </div>
+              </div>
+              <div
+                className="table_body"
+                style={{
+                  width: width,
+                  height: height - HEADER_HEIGHT,
+                }}
+              >
+                <FixedSizeList
+                  height={height - HEADER_HEIGHT}
+                  itemCount={size.rows}
+                  itemSize={ROW_HEIGHT}
+                  width="100%"
+                  outerRef={innerBodyRef}
+                  useIsScrolling
+                  // TODO: Implement item key for sorting
+                  onScroll={(event) => {
+                    !state.isScrolling &&
+                      innerBodyRef.current &&
+                      setScrollingState(true);
+                  }}
+                >
+                  {RenderRow}
+                </FixedSizeList>
+              </div>
+            </>
           )}
         </AutoSizer>
 
@@ -643,19 +674,8 @@ const Spreadsheet = <CellType extends Types.CellBase>(
       setScrollingState,
       innerBodyRef,
       state,
+      activeCellNode,
     ]
-  );
-
-  const activeCellNode = React.useMemo(
-    () => (
-      <ActiveCell
-        // @ts-ignore
-        DataEditor={DataEditor}
-        // @ts-ignore
-        getBindingsForCell={getBindingsForCell}
-      />
-    ),
-    [DataEditor, getBindingsForCell]
   );
 
   const rootNode = React.useMemo(
@@ -671,7 +691,6 @@ const Spreadsheet = <CellType extends Types.CellBase>(
         onBlur={handleBlur}
       >
         {tableNode}
-        {activeCellNode}
       </div>
     ),
     [
@@ -682,7 +701,6 @@ const Spreadsheet = <CellType extends Types.CellBase>(
       handleMouseMove,
       handleBlur,
       tableNode,
-      activeCellNode,
     ]
   );
 

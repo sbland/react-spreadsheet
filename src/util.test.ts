@@ -500,6 +500,35 @@ describe("getOffsetRect()", () => {
   });
 });
 
+describe("getRelativeRect", () => {
+  test("Returns object with element position relative to parent", () => {
+    const MOCK_ELEMENT = {
+      offsetWidth: 5,
+      offsetHeight: 10,
+      getBoundingClientRect: () => ({
+        left: 20,
+        top: 30,
+      }),
+    } as unknown as HTMLElement;
+    const MOCK_PARENT_ELEMENT = {
+      offsetWidth: 42,
+      offsetHeight: 42,
+      scrollLeft: 10,
+      getBoundingClientRect: () => ({
+        left: 5,
+        top: 10,
+      }),
+    } as unknown as HTMLElement;
+
+    expect(util.getRelativeRect(MOCK_ELEMENT, MOCK_PARENT_ELEMENT)).toEqual({
+      width: 5,
+      height: 10,
+      left: 25,
+      top: 20,
+    });
+  });
+});
+
 describe("readTextFromClipboard()", () => {
   test("Returns empty string if no text is defined", () => {
     const EXAMPLE_CLIPBOARD_EVENT = {} as ClipboardEvent;
