@@ -16,6 +16,7 @@ type Props = {
 const ActiveCell: React.FC<Props> = (props) => {
   const rootRef = React.useRef<HTMLDivElement>(null);
   const { getBindingsForCell } = props;
+  const isScrolling = useSelector((state) => state.isScrolling);
 
   const dispatch = useDispatch();
   const setCellData = React.useCallback(
@@ -48,8 +49,8 @@ const ActiveCell: React.FC<Props> = (props) => {
       : undefined
   );
   const hidden = React.useMemo(
-    () => !active || !dimensions,
-    [active, dimensions]
+    () => !active || !dimensions || isScrolling,
+    [active, dimensions, isScrolling]
   );
 
   const initialCellRef = React.useRef<Types.CellBase | undefined>(undefined);
