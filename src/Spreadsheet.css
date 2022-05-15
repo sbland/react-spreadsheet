@@ -75,6 +75,12 @@
   overflow: hidden;
 }
 
+.Spreadsheet_table_body-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .Spreadsheet__cell,
 .Spreadsheet__active-cell {
   cursor: cell;
@@ -164,4 +170,13 @@
 
 .Spreadsheet__floating-rect--copied {
   border: 2px var(--outline-color) dashed;
+}
+
+.Spreadsheet_selectedContainer-wrap {
+  overflow: scroll;
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
 }

@@ -566,7 +566,10 @@ const Spreadsheet = <CellType extends Types.CellBase>(
         innerRef={tableRef}
       >
         <div ref={headerRef} className="Spreadsheet_header-wrap">
-          <HeaderRow width={resizedTableWidth + 100} height={HEADER_HEIGHT}>
+          <HeaderRow
+            width={resizedTableWidth + 100}
+            height={!hideColumnIndicators ? HEADER_HEIGHT : 0}
+          >
             {!hideRowIndicators && !hideColumnIndicators && (
               <CornerIndicator width={columnWidths[0]} />
             )}
@@ -593,58 +596,51 @@ const Spreadsheet = <CellType extends Types.CellBase>(
               )}
           </HeaderRow>
         </div>
-        <AutoSizer>
-          {({ height, width }) => (
-            <>
-              <div
-                className="selectedContainer_wrap"
-                ref={selectedContainerRef}
-                style={{
-                  overflow: "scroll",
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  right: 0,
-                  bottom: 0,
-                }}
-              >
+        <div className="Spreadsheet_table_body-wrap">
+          <AutoSizer>
+            {({ height, width }) => (
+              <>
                 <div
-                  className="selectedContainer"
-                  style={{ width: resizedTableWidth, height: "100%" }}
+                  className="Spreadsheet_selectedContainer-wrap"
+                  ref={selectedContainerRef}
                 >
-                  {activeCellNode}
-                  <Selected />
-                  <Copied />
+                  <div
+                    className="Spreadsheet_selectedContainer"
+                    style={{ width: resizedTableWidth, height: "100%" }}
+                  >
+                    {activeCellNode}
+                    <Selected />
+                    <Copied />
+                  </div>
                 </div>
-              </div>
-              <div
-                className="table_body"
-                style={{
-                  width: width,
-                  height: height - HEADER_HEIGHT,
-                }}
-              >
-                <FixedSizeList
-                  height={height - HEADER_HEIGHT}
-                  itemCount={size.rows}
-                  itemSize={ROW_HEIGHT}
-                  width="100%"
-                  outerRef={innerBodyRef}
-                  useIsScrolling
-                  // TODO: Implement item key for sorting
-                  onScroll={(event) => {
-                    !state.isScrolling &&
-                      innerBodyRef.current &&
-                      setScrollingState(true);
+                <div
+                  className="table_body"
+                  style={{
+                    width: width,
+                    height: height,
                   }}
                 >
-                  {RenderRow}
-                </FixedSizeList>
-              </div>
-            </>
-          )}
-        </AutoSizer>
-
+                  <FixedSizeList
+                    height={height}
+                    itemCount={size.rows}
+                    itemSize={ROW_HEIGHT}
+                    width="100%"
+                    outerRef={innerBodyRef}
+                    useIsScrolling
+                    // TODO: Implement item key for sorting
+                    onScroll={(event) => {
+                      !state.isScrolling &&
+                        innerBodyRef.current &&
+                        setScrollingState(true);
+                    }}
+                  >
+                    {RenderRow}
+                  </FixedSizeList>
+                </div>
+              </>
+            )}
+          </AutoSizer>
+        </div>
         <ColumnWidthManager
           setColumnWidths={setColumnWidths}
           columnWidths={columnWidths}
